@@ -1,14 +1,21 @@
 import java.util.Arrays;
 import java.util.Scanner;
 
-
+/**
+ * 
+ * 1024 frames in PM
+ * 512 words per frame
+ *
+ */
 public class VMSim {
 	
 	Scanner sc = new Scanner(System.in);
-	boolean[] freeFrames = new boolean[1024];
+	boolean[] frames = new boolean[1024];
+	int[] pm = new int[524288];
 	{
-		Arrays.fill(freeFrames, false);
-		//println(Arrays.toString(freeFrames));
+		Arrays.fill(frames, false);
+		frames[0] = true;
+		Arrays.fill(pm, 0);
 	}
 	
 	
@@ -23,7 +30,7 @@ public class VMSim {
 		for (int i = 0; i < initStArray.length; i+=2) {
 			int segment = Integer.parseInt(initStArray[i]);
 			int ptAddress = Integer.parseInt(initStArray[i+1]);
-			assignSegment(segment, ptAddress);
+			setSegment(segment, ptAddress);
 		}
 		
 		// get the page addresses of each segment
@@ -33,7 +40,7 @@ public class VMSim {
 			int page = Integer.parseInt(initPtArray[i]);
 			int segment = Integer.parseInt(initPtArray[i+1]);
 			int pgAddress = Integer.parseInt(initPtArray[i+2]);
-			assignPage(page, segment, pgAddress);
+			setPage(page, segment, pgAddress);
 		}
 	}
 
@@ -48,13 +55,62 @@ public class VMSim {
 	
 	
 
-	private void assignPage(int page, int segment, int pgAddress) {
+	private void setSegment(int segment, int ptAddress) {
 		//TODO
+		if (frameOccupied(ptAddress)) {
+			println("frame already occupied, cannot set");
+		} else {
+			pm[segment] = ptAddress;
+			setFramePT(ptAddress);
+		}
 	}
 
-	private void assignSegment(int segment, int ptAddress) {
+	private void setPage(int page, int segment, int pgAddress) {
 		//TODO
+		if (frameOccupied(pgAddress)) {
+			println("frame already occupied, cannot set");
+		} else {
+			int ptAddress = getPtAddress(segment);
+			pm[ptAddress + page] = pgAddress;
+			setFramePage(pgAddress);
+		}
 	}
+	
+	public boolean frameOccupied(int address) {
+		int frame = getFrame(address);
+		return frames[frame];
+	}
+	
+	public void setFramePage(int address) {
+		int frame = getFrame(address);
+		frames[frame] = true;
+	}
+	
+	public void setFramePT(int address) {
+		int frame = getFrame(address);
+		frames[frame] = true;
+		frames[frame+1] = true;
+	}
+	
+	private int getFrame(int address) {
+		return address / 1024;
+	}
+
+	private int getPtAddress(int segmentNumber) {
+		return pm[segmentNumber];
+	}
+	
+	private int getPgAddress(int ptAddress, int pageNumber) {
+		return pm[ptAddress + pageNumber];
+	}
+	
+	
+	
+	
+	
+	
+	
+	
 
 	public static void main(String[] args) {
 		new VMSim().run();
