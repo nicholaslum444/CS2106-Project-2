@@ -1,3 +1,7 @@
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -8,57 +12,136 @@ import java.util.Scanner;
  *
  */
 public class VMSim {
+	static final String outFile = "A0108358B1.txt";
+	static final String outFileTLB = "A0108358B2.txt";
 	
-	Scanner sc = new Scanner(System.in);
+	boolean useTLB = false;
+	
 	boolean[] frames = new boolean[1024];
 	int[] pm = new int[524288];
+	
 	{
 		Arrays.fill(frames, false);
 		frames[0] = true;
 		Arrays.fill(pm, 0);
 	}
 	
-	
-	public void run() {
-		init();
-	}
-	
-	public void init() {
-		// get the segment PT addresses
-		String initSt = sc.nextLine();
-		String[] initStArray = initSt.split(" ");
-		for (int i = 0; i < initStArray.length; i+=2) {
-			int segment = Integer.parseInt(initStArray[i]);
-			int ptAddress = Integer.parseInt(initStArray[i+1]);
-			setSegment(segment, ptAddress);
+	// format:
+	// { VMSim.java input1.txt input2.txt } for no TLB
+	// { VMSim.java input1.txt input2.txt tlb } for yes TLB
+	public void run(String[] args) {
+		String initFilename = args[0];
+		String inputFilename = args[1];
+		
+		if (args.length > 2) {
+			if (args[3].toLowerCase().equals("tlb")) {
+				useTLB = true;
+			}
 		}
 		
+		try {
+			init(initFilename);
+		} catch (FileNotFoundException e) {
+				debug("init fnf");
+			e.printStackTrace();
+		} catch (IOException e) {
+				debug("init io");
+			e.printStackTrace();
+		}
+		
+		try {
+			input(inputFilename);
+		} catch (FileNotFoundException e) {
+				debug("input fnf");
+			e.printStackTrace();
+		} catch (IOException e) {
+				debug("input io");
+			e.printStackTrace();
+		}
+		
+	}
+	
+	public void init(String filename) throws FileNotFoundException, IOException {
+		BufferedReader br = new BufferedReader(new FileReader(filename));
+		
+		// get the segment PT addresses
+		String initSTString = br.readLine();
+		initST(initSTString);
+		
 		// get the page addresses of each segment
-		String initPt = sc.nextLine();
-		String[] initPtArray = initPt.split(" ");
-		for (int i = 0; i < initPtArray.length; i+=3) {
-			int page = Integer.parseInt(initPtArray[i]);
-			int segment = Integer.parseInt(initPtArray[i+1]);
-			int pgAddress = Integer.parseInt(initPtArray[i+2]);
+		String initPTString = br.readLine();
+			debug(initPTString);
+		initPT(initPTString);
+		br.close();
+	}
+	
+	public void input(String filename) throws FileNotFoundException, IOException {
+		BufferedReader br = new BufferedReader(new FileReader(filename));
+		
+		// get the segment PT addresses
+		String inputString = br.readLine();
+		String[] inputArray = inputString.split(" ");
+		for (int i = 0; i < inputArray.length; i+=2) {
+			int rw = Integer.parseInt(inputArray[i]);
+			int va = Integer.parseInt(inputArray[i+1]);
+			executeVA(rw, va);
+		}
+		
+		br.close();
+	}
+
+	private void executeVA(int rw, int va) {
+		if (rw == 0) {
+			readVA(va);
+		} else if (rw == 1) {
+			writeVA(va);
+		} else {
+				debug(rw + " is not read or write");
+		}
+	}
+	
+	private void readVA(int va) {
+		
+	}
+	
+	private void writeVA(int va) {
+		
+	}
+	
+	
+	
+	
+
+
+	
+
+	
+
+	
+
+	public void initST(String initSTString) {
+		String[] initSTArray = initSTString.split(" ");
+		for (int i = 0; i < initSTArray.length; i+=2) {
+			int segment = Integer.parseInt(initSTArray[i]);
+			int ptAddress = Integer.parseInt(initSTArray[i+1]);
+			setSegment(segment, ptAddress);
+		}
+	}
+
+	public void initPT(String initPTString) {
+		String[] initPTArray = initPTString.split(" ");
+		for (int i = 0; i < initPTArray.length; i+=3) {
+			int page = Integer.parseInt(initPTArray[i]);
+			int segment = Integer.parseInt(initPTArray[i+1]);
+			int pgAddress = Integer.parseInt(initPTArray[i+2]);
 			setPage(page, segment, pgAddress);
 		}
 	}
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
 	private void setSegment(int segment, int ptAddress) {
 		//TODO
-		if (frameOccupied(ptAddress)) {
-			println("frame already occupied, cannot set");
+		if (isFrameOccupied(ptAddress)) {
+				debug("sg frame already occupied, cannot set");
 		} else {
 			pm[segment] = ptAddress;
 			setFramePT(ptAddress);
@@ -67,17 +150,23 @@ public class VMSim {
 
 	private void setPage(int page, int segment, int pgAddress) {
 		//TODO
-		if (frameOccupied(pgAddress)) {
-			println("frame already occupied, cannot set");
+			debug(pgAddress);
+		if (isFrameOccupied(pgAddress)) {
+				debug("pg frame already occupied, cannot set");
 		} else {
 			int ptAddress = getPtAddress(segment);
+				debug(ptAddress);
 			pm[ptAddress + page] = pgAddress;
 			setFramePage(pgAddress);
 		}
 	}
 	
-	public boolean frameOccupied(int address) {
+	public boolean isFrameOccupied(int address) {
+		if (address == -1) {
+			return false;
+		}
 		int frame = getFrame(address);
+			debug("frame number = " + frame);
 		return frames[frame];
 	}
 	
@@ -93,7 +182,7 @@ public class VMSim {
 	}
 	
 	private int getFrame(int address) {
-		return address / 1024;
+		return address / 512;
 	}
 
 	private int getPtAddress(int segmentNumber) {
@@ -112,11 +201,15 @@ public class VMSim {
 	
 	
 
-	public static void main(String[] args) {
-		new VMSim().run();
+	/*public static void main(String[] args) {
+		new VMSim().run(args);
+	}*/
+	
+	public void debug(Object s) {
+		System.err.println("DEBUG: " + s);
 	}
 	
-	public void println(String s) {
+	public void println(Object s) {
 		System.out.println(s);
 	}
 }
