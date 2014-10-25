@@ -15,6 +15,13 @@ public class VMSim {
 	static final String outFile = "A0108358B1.txt";
 	static final String outFileTLB = "A0108358B2.txt";
 	
+	static final int READ = 0;
+	static final int WRITE = 1;
+	
+	static final int mask_W = 0b00000000000000000000000111111111;
+	static final int mask_P = 0b00000000000001111111111000000000;
+	static final int mask_S = 0b00001111111110000000000000000000;
+	
 	boolean useTLB = false;
 	
 	boolean[] frames = new boolean[1024];
@@ -91,9 +98,9 @@ public class VMSim {
 	}
 
 	private void executeVA(int rw, int va) {
-		if (rw == 0) {
+		if (rw == READ) {
 			readVA(va);
-		} else if (rw == 1) {
+		} else if (rw == WRITE) {
 			writeVA(va);
 		} else {
 				debug(rw + " is not read or write");
@@ -101,7 +108,19 @@ public class VMSim {
 	}
 	
 	private void readVA(int va) {
+			debug("read va");
+			debug(va);
+		int segment = (va & mask_S) >> 19;
+			debug("s = " + segment);
+		int page = (va & mask_P) >> 9;
+			debug("p = " + page);
+		int word = va & mask_W;
+			debug("w = " + word);
 		
+		int ptAddress = getPtAddress(segment);
+		int pgAddress = getPgAddress(ptAddress, page);
+		int value = pm[pgAddress + word];
+			debug(value);
 	}
 	
 	private void writeVA(int va) {
