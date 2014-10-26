@@ -14,15 +14,15 @@ import java.util.Collections;
  */
 public class VMSim {
 	
-	static class TLB {
+	public static class TLB {
 
-		private static final int DONT_HAVE = -2;
+		public static final int DONT_HAVE = -2;
 		
-		static class Entry implements Comparable<Entry> {
+		public static class Entry implements Comparable<Entry> {
 			
-			Integer lru;
-			int sp;
-			int pa;
+			public Integer lru;
+			public int sp;
+			public int pa;
 			
 			@Override
 			public int compareTo(Entry o) {
@@ -30,10 +30,10 @@ public class VMSim {
 			}
 		}
 		
-		ArrayList<Entry> tlb = new ArrayList<Entry>();
-		int maxSize = 4;
+		public ArrayList<Entry> tlb = new ArrayList<Entry>();
+		public int maxSize = 4;
 		
-		Entry dequeue(Entry e) {
+		public Entry dequeue(Entry e) {
 			if (tlb.remove(e)) {
 				return e;
 			} else {
@@ -41,11 +41,11 @@ public class VMSim {
 			}
 		}
 		
-		void enqueue(Entry e) {
+		public void enqueue(Entry e) {
 			tlb.add(e);
 		}
 		
-		void add(Entry e) {
+		public void add(Entry e) {
 			if (tlb.size() < maxSize) {
 				tlb.add(e);
 			} else {
@@ -54,14 +54,14 @@ public class VMSim {
 			}
 		}
 		
-		void storePA(int sp, int pa) {
+		public void storePA(int sp, int pa) {
 			Entry e = new Entry();
 			e.sp = sp;
 			e.pa = pa;
 			add(e);
 		}
 		
-		int getPA(int sp, int w) {
+		public int getPA(int sp, int w) {
 			Entry e = null;
 			for (Entry entry : tlb) {
 				if (entry.sp == sp) {
@@ -78,26 +78,26 @@ public class VMSim {
 		
 	}
 	
-	static final String outFile = "A0108358B1.txt";
-	static final String outFileTLB = "A0108358B2.txt";
+	public static final String outFile = "A0108358B1.txt";
+	public static final String outFileTLB = "A0108358B2.txt";
 	
-	static final int READ = 0;
-	static final int WRITE = 1;
+	public static final int READ = 0;
+	public static final int WRITE = 1;
 	
-	static final int mask_W =  0b00000000000000000000000111111111;
-	static final int mask_P =  0b00000000000001111111111000000000;
-	static final int mask_S =  0b00001111111110000000000000000000;
-	static final int mask_SP = 0b00001111111111111111111000000000;
+	public static final int mask_W =  0b00000000000000000000000111111111;
+	public static final int mask_P =  0b00000000000001111111111000000000;
+	public static final int mask_S =  0b00001111111110000000000000000000;
+	public static final int mask_SP = 0b00001111111111111111111000000000;
 	
-	private static final String PAGE_FAULT = "pf";
-	private static final String ERROR = "err";
+	public static final String PAGE_FAULT = "pf";
+	public static final String ERROR = "err";
 	
 	
-	boolean useTLB = false;
-	TLB tlb = new TLB();
+	public boolean useTLB = false;
+	public TLB tlb = new TLB();
 	
-	boolean[] frames = new boolean[1024];
-	int[] pm = new int[524288];
+	public boolean[] frames = new boolean[1024];
+	public int[] pm = new int[524288];
 	
 	{
 		Arrays.fill(frames, false);
@@ -160,6 +160,8 @@ public class VMSim {
 		// get the segment PT addresses
 		String inputString = br.readLine();
 		String[] inputArray = inputString.split(" ");
+		
+		// do doublets
 		for (int i = 0; i < inputArray.length; i+=2) {
 			int rw = Integer.parseInt(inputArray[i]);
 			int va = Integer.parseInt(inputArray[i+1]);
@@ -171,6 +173,8 @@ public class VMSim {
 
 	public void initST(String initSTString) {
 		String[] initSTArray = initSTString.split(" ");
+		
+		// do doublets
 		for (int i = 0; i < initSTArray.length; i+=2) {
 			int segment = Integer.parseInt(initSTArray[i]);
 			int ptAddress = Integer.parseInt(initSTArray[i+1]);
@@ -180,6 +184,8 @@ public class VMSim {
 
 	public void initPT(String initPTString) {
 		String[] initPTArray = initPTString.split(" ");
+
+		// do triplets
 		for (int i = 0; i < initPTArray.length; i+=3) {
 			int page = Integer.parseInt(initPTArray[i]);
 			int segment = Integer.parseInt(initPTArray[i+1]);
@@ -203,6 +209,7 @@ public class VMSim {
 			debug("read va");
 			debug(va);
 		
+		// get the values
 		int segment = (va & mask_S) >> 19;
 			debug("s = " + segment);
 		int page = (va & mask_P) >> 9;
@@ -211,6 +218,7 @@ public class VMSim {
 			debug("w = " + offset);
 		int sp = (va & mask_SP) >> 9;
 		
+		// check pt
 		int ptAddress = getPTAddress(segment);
 		
 		if (ptAddress == -1) {
@@ -221,6 +229,7 @@ public class VMSim {
 			return;
 		}
 		
+		// check pg
 		int pgAddress = getPgAddress(ptAddress, page);
 		
 		if (pgAddress == -1) {
@@ -231,6 +240,7 @@ public class VMSim {
 			return;
 		}
 		
+		// check pa
 		int pa;
 		
 		if (useTLB) {
@@ -255,6 +265,7 @@ public class VMSim {
 			debug("read va");
 			debug(va);
 		
+		// get the values
 		int segment = (va & mask_S) >> 19;
 			debug("s = " + segment);
 		int page = (va & mask_P) >> 9;
@@ -263,6 +274,7 @@ public class VMSim {
 			debug("w = " + offset);
 		int sp = (va & mask_SP) >> 9;
 		
+		// check pt
 		int ptAddress = getPTAddress(segment);
 		
 		if (ptAddress == -1) {
@@ -276,6 +288,7 @@ public class VMSim {
 			ptAddress = newPTAddress;
 		}
 		
+		// check pg
 		int pgAddress = getPgAddress(ptAddress, page);
 		
 		if (pgAddress == -1) {
@@ -289,6 +302,7 @@ public class VMSim {
 			pgAddress = newPgAddress;			
 		}
 		
+		// check pa
 		int pa;
 		
 		if (useTLB) {
@@ -307,15 +321,6 @@ public class VMSim {
 		
 		print(pa);
 	}
-	
-	
-	
-	
-
-
-	
-
-	
 
 	private void setSegment(int segment, int ptAddress) {
 		if (isFrameOccupied(ptAddress)) {
@@ -338,7 +343,7 @@ public class VMSim {
 		}
 	}
 	
-	public boolean isFrameOccupied(int address) {
+	private boolean isFrameOccupied(int address) {
 		if (address == -1) {
 			return false;
 		}
@@ -347,13 +352,13 @@ public class VMSim {
 		return frames[frame];
 	}
 	
-	public void setFramePage(int address) {
+	private void setFramePage(int address) {
 		int frame = getFrameNumber(address);
 			debug("pg frame set = " + frame);
 		frames[frame] = true;
 	}
 	
-	public void setFramePT(int address) {
+	private void setFramePT(int address) {
 		int frame = getFrameNumber(address);
 			debug("pt frame set = " + frame);
 		frames[frame] = true;
@@ -399,24 +404,16 @@ public class VMSim {
 	private int getPA(int s, int p, int w) {
 		return pm[pm[s]+p]+w;
 	}
-	
-	
-	
-	
-	
-	
-	
-	
 
-	public static void main(String[] args) {
-		new VMSim().run(args);
-	}
-	
-	public void debug(Object s) {
+	private void debug(Object s) {
 		System.err.println("DEBUG: " + s);
 	}
 	
-	public void print(Object s) {
+	private void print(Object s) {
 		System.out.print(s + " ");
+	}
+
+	public static void main(String[] args) {
+		new VMSim().run(args);
 	}
 }
